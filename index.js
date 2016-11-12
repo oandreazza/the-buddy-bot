@@ -33,7 +33,10 @@ var findUserByName = function(username){
 }
 
 
-controller.hears(['RDM FINALIZADA'], ['mention', 'direct_mention', 'direct_message'], function(bot,message) {
+
+
+
+controller.hears(['RDM FINALIZADA', 'rdm finalizada'], ['mention', 'direct_mention', 'direct_message'], function(bot,message) {
 
   // start a conversation to handle this response.
   bot.startConversation(message,function(err,convo) {
@@ -66,7 +69,7 @@ controller.hears(['RDM FINALIZADA'], ['mention', 'direct_mention', 'direct_messa
       )
 
       function filterByApp(element, appName){
-        return element.apps.some( (app) => app.name === appName)
+        return element.apps.some( (app) => new RegExp('\\b' + appName + '\\b','i').test(app.name))
       }
 
       var poId = poOwned[0].id;
