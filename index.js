@@ -42,7 +42,8 @@ var getUserApps = function(){
         id: 'mauricio.sganderla',
         apps:[
           { name: "SAPC"},
-          { name: "CRM"}
+          { name: "CRM"},
+          { name: "BDO"}
         ]
       },
       {
