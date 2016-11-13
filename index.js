@@ -58,9 +58,11 @@ var getUserApps = function(){
 }
 
 var getUserByApp = function(appName){
-  return getUserApps().pos.filter(
+  var userFilter =  getUserApps().pos.filter(
     (element) => filterByApp(element,appName)
   )
+
+  return userFilter.length > 0 ? userFilter[0] : {}
 }
 
 var filterByApp = function (element, appName){
@@ -70,48 +72,53 @@ var filterByApp = function (element, appName){
 
 controller.hears(['RDM FINALIZADA', 'rdm finalizada'], ['mention', 'direct_mention', 'direct_message'], function(bot,message) {
 
-  allUsers( (users) => slackusers = users);
-  // start a conversation to handle this response.
+    var appName;
+    var appVersion;
+    allUsers( (users) => slackusers = users);
 
     var askApp = function(err, convo){
       convo.ask('Qual sistema ?',function(response, convo){
-        var appName = response.text;
-        var poOwned = getUserByApp(appName)
-        var poId = poOwned[0].id;
-        userToValidate = findUserByName(poId)
-        convo.setVar('app', appName);
-        convo.say('Ótimo! Vou procurar quem é o dono...');
+        appName = response.text;
+        convo.sayFirst('Ótimo! Vou procurar quem é o dono...');
+        var poOwned = getUserByApp(appName);
+        if(!poOwned.id){
+          convo.say("Droga! Não achei ninguem correspondente para o sistema " + appName)
+          convo.say("Vamos tentar novamente...");
+          convo.repeat();
+        }else{
+          var poId = poOwned.id;
+          userToValidate = findUserByName(poId)
 
-        askVersion(response,convo);
+          askVersion(response,convo);
+
+        }
+        convo.next();
+
+      });
+    }
+
+    var askVersion = function(err, convo){
+      convo.ask('Qual a versão do '+appName+' ?',function(response,conv){
+        appVersion = response.text;
+        convo.say('Ótimo, achei!! Já estou indo falar com o '+userToValidate.real_name)
+
+        initializePrivateConversion(response,convo)
 
         convo.next();
-      });
+      })
+    }
 
-      var askVersion = function(err, convo){
-        convo.ask('Qual a versão do {{vars.app}} ?',function(response,conv){
-          var version = response.text;
-          convo.setVar('appVersion', version);
-          convo.say('Ótimo, achei!! Já estou indo falar com o '+userToValidate.real_name)
-
-          initializePrivateConversion(response,convo)
-
-          convo.next();
-        })
-      }
-
-      var initializePrivateConversion = function (err, convo){
-
-        var message = 'Olá ' + userToValidate.real_name + '! Precisamos que você valide o {{vars.app}} versão {{vars.appVersion}}'
-        console.log(message);
-        var consversationData = {user:userToValidate.id, message: message }
-        bot.startPrivateConversation(consversationData, function(err,convo){
-          if (err) {
-             console.log(err);
-           } else {
-             convo.say(consversationData.message);
-           }
-         })
-      }
+    var initializePrivateConversion = function (err, convo){
+      var message = 'Olá ' + userToValidate.real_name + '! Precisamos que você valide o ' + appName + ' versão '+ appVersion
+      var consversationData = {user:userToValidate.id, message: message }
+      bot.startPrivateConversation(consversationData, function(err,convo){
+        if (err) {
+           console.log(err);
+         } else {
+           convo.say(consversationData.message);
+         }
+       })
+       convo.next()
     }
 
     bot.startConversation(message, askApp);
