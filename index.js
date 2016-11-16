@@ -72,7 +72,6 @@ var filterByApp = function (element, appName){
 
 
 controller.hears(['RDM FINALIZADA', 'rdm finalizada'], ['mention', 'direct_mention', 'direct_message'], function(bot,message) {
-
     var appName;
     var appVersion;
     allUsers( (users) => slackusers = users);
@@ -123,7 +122,32 @@ controller.hears(['RDM FINALIZADA', 'rdm finalizada'], ['mention', 'direct_menti
     }
 
     bot.startConversation(message, askApp);
-
-
-
 });
+
+controller.hears('\\[Desenvolvimento\\] Sistema: (.*):(.*)', ['mention', 'direct_mention', 'direct_message'], function(bot,message) {
+  var app = message.match[1];
+  var appVersion = message.match[2];
+
+  bot.reply(message, "Que ótimo estou buscando o respectivo dono do " + app);
+
+  allUsers( (users,message) => {
+    slackusers = users;
+
+    var poOwned = getUserByApp(app);
+    var user = findUserByName(poOwned.id);
+
+    bot.reply(message,"Achei! Já estou indo avisar o " + user.real_name);
+    var message = "Olá " +user.real_name+ ", o " + app + " na versão "+appVersion+" foi realizado com sucesso em produção";
+    var consversationData = {user:user.id, message: message}
+    bot.startPrivateConversation(consversationData, function(err,convo){
+        if (err) {
+           console.log(err);
+         } else {
+           convo.say(consversationData.message);
+         }
+    })
+
+  });
+
+
+})
